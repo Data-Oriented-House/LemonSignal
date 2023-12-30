@@ -1,0 +1,14 @@
+node_modules
+build
+
+selene.toml
+
+Packages/*
+
+__pycache__
+profile.out
+profile.svg
+graphviz.dot
+
+sourcemap.json
+*.lock
