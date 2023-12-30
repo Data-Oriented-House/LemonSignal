@@ -28,6 +28,7 @@ local function runEventHandlerInFreeThread()
 	end
 end
 
+--- It binds a function to its arguments
 local function newVariadicFunction(fn: (...any) -> (), ...: any)
 	local args = { ... }
 	local len = #args
