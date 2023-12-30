@@ -1,5 +1,0 @@
-quote_style = "ForceSingle"
-call_parentheses = "None"
-
-[sort_requires]
-enabled = true

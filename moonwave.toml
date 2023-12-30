@@ -1,12 +1,11 @@
-title = "Stew"  # From Git
-gitRepoUrl = "https://github.com/data-oriented-house/Stew" # From Git
+title = "LemonSignal"                                             # From Git
+gitRepoUrl = "https://github.com/data-oriented-house/LemonSignal" # From Git
 
 gitSourceBranch = "main"
 changelog = true
 classOrder = [
-	"Stew",
-	"World",
-	"Factory",
+	"Signal",
+	"Connection"
 ]
 
 [home]
@@ -14,19 +13,13 @@ enabled = true
 includeReadme = false
 
 [[home.features]]
-title = "Mutual Respect"
-description = "Stew understands that you need to get things done your way and quickly. It offers a simple API that is unintrusive, easy to learn and use, and still flexible enough for any use case."
-image = "/Handshake.png"
+title = ""
+description = ""
 
 [[home.features]]
-title = "Component-Based Architecture"
-description = "Stew enables you to create modular, reusable components that can be accessed through entity intersections. Entities can be anything, easily integrating with pre-existing data layouts such as the Roblox data-model."
-image = "/SoupWhiteBlack.png"
-
-[[home.features]]
-title = "Minimalist"
-description = "Stew does not try to be everything to everyone. It leverages the flexibility of lua callbacks to provide full control over the behavior of Stew's core features without the complex configuration, enforced patterns and dependencies, or overhead found elsewhere. \"It just works.\""
-image = "/Scaffolding.png"
+title = "Speed and Convenience"
+description = "LemonSignal is a modification of GoodSignal optimized for speed and extended functionality for no extra cost."
+image = "/Lemon.png"
 
 [docusaurus]
 onBrokenLinks = "throw"
@@ -35,17 +28,17 @@ favicon = "/favicon.ico"
 
 # From git:
 organizationName = "Data-Oriented-House"
-projectName = "Stew"
+projectName = "LemonSignal"
 url = "https://data-oriented-house.github.io"
-baseUrl = "/Stew/"
-tagline = "Luau's minimal Entity-Component module"
+baseUrl = "/LemonSignal/"
+tagline = "Luau Signal Faster Than Most"
 
 [navbar]
 # hideableSidebar = true
 
 [footer]
 style = "dark"
-copyright = "Copyright © 2023 SolarScuffle-Bot. Built with Moonwave and Docusaurus"
+copyright = "Copyright © 2023 Aspecky. Built with Moonwave and Docusaurus"
 
 # [[footer.links]]
 # title = "examples"
