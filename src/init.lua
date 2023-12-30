@@ -70,16 +70,15 @@ Connection.__index = Connection
 	Disconnects the connection from the signal. May be reconnected later using Connection:Reconnect().
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, 'TEST1:')
+	local connection = signal:Connect(print, "TEST1:")
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
+	signal:Fire("Hello world!") -- TEST1: Hello world!
 
 	connection:Disconnect()
 
-	signal:Fire 'Goodbye world!'
+	signal:Fire("Goodbye world!")
 	```
 ]=]
 function Connection.Disconnect<T...>(self: Connection<T...>)
@@ -109,21 +108,19 @@ end
 	Reconnects the connection to the signal again. May be disconnected later using Connection:Disconnect().
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, 'TEST1:')
+	local connection = signal:Connect(print, "TEST1:")
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
+	signal:Fire("Hello world!") -- TEST1: Hello world!
 
 	connection:Disconnect()
 
-	signal:Fire 'Goodbye world!'
+	signal:Fire("Goodbye world!")
 
 	connection:Reconnect()
 
-	signal:Fire 'Hello again!'
-	-- 'TEST1:	Hello again!'
+	signal:Fire("Hello again!") -- TEST1: Hello again!
 	```
 ]=]
 function Connection.Reconnect<T...>(self: Connection<T...>)
@@ -160,7 +157,9 @@ SignalMeta.__index = SignalMeta
 	Returns a new signal instance which can be used to connect functions.
 
 	```lua
-	local signal = Signal.new()
+	local LemonSignal = require(path.to.LemonSignal)
+
+	local signal = LemonSignal.new()
 	```
 ]=]
 function Signal.new()
@@ -175,19 +174,20 @@ export type Signal<U...> = typeof(Signal.new(...))
 	@within Signal
 	@return Connection
 
-	Connects a function to the signal and returns the connection. Passes variadic arguments that will always be prepended to fired arguments.
+	Connects a function to the signal and returns the connection. Passed variadic arguments that will always be prepended to fired arguments.
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, 'TEST1:')
+	local connection = signal:Connect(function(prefix: string, firedMessage: string)
+		print(prefix, firedMessage)
+	end, "TEST1:")
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
+	signal:Fire("Hello world!") -- TEST1: Hello world!
 	```
 ]=]
-function SignalMeta.Connect<T..., U...>(self: Signal<U...>, fn: (...any) -> (), ...: T...)
-	local Connection = setmetatable({
+function SignalMeta.Connect<T..., U...>(self: Signal<U...>, fn: (...any) -> (), ...: T...): Connection<T...>
+	local cn = setmetatable({
 		Connected = true,
 		_signal = self,
 		_fn = if not ... then fn else newVariadicFunction(fn, ...),
@@ -196,11 +196,11 @@ function SignalMeta.Connect<T..., U...>(self: Signal<U...>, fn: (...any) -> (), 
 
 	local head = self._handlerListHead
 	if head then
-		Connection._next = head
+		cn._next = head
 	end
 
-	self._handlerListHead = Connection
-	return Connection
+	self._handlerListHead = cn
+	return cn
 end
 
 export type Connection<T...> = typeof(SignalMeta.Connect(...))
@@ -211,16 +211,18 @@ export type Connection<T...> = typeof(SignalMeta.Connect(...))
 	Disconnects all connections currently connected to the signal. They may be reconnected later.
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, 'TEST1:')
+	local connection1 = signal:Connect(print, "TEST1:")
+	local connection2 = signal:Connect(print, "TEST2:")
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
+	signal:Fire("Hello world!")
+	-- TEST2: Hello world!
+	-- TEST1: Hello world!
 
 	signal:DisconnectAll()
 
-	signal:Fire 'Goodbye World!'
+	signal:Fire("Goodbye World!")
 	```
 ]=]
 function SignalMeta.DisconnectAll<U...>(self: Signal<U...>)
@@ -236,16 +238,11 @@ end
 	Fires the signal and calls all connected functions with the connection's bound arguments and the fired arguments.
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, 'TEST1:')
+	local connection = signal:Connect(print, "TEST1:")
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
-
-	signal:DisconnectAll()
-
-	signal:Fire 'Goodbye World!'
+	signal:Fire("Hello world!") -- TEST1: Hello world!
 	```
 ]=]
 function SignalMeta.Fire<U...>(self: Signal<U...>, ...: U...)
@@ -276,16 +273,15 @@ end
 	Waits until the signal is fired and returns the fired arguments.
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, 'TEST1:')
+	task.delay(1, function()
+		signal:Fire("Hello", "world!")
+	end)
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
-
-	signal:DisconnectAll()
-
-	signal:Fire 'Goodbye World!'
+	local str1, str2 = signal:Wait()
+	print(str1) -- Hello
+	print(str2) -- world!
 	```
 ]=]
 function SignalMeta.Wait<U...>(self: Signal<U...>): U...
@@ -312,12 +308,11 @@ end
 	```lua
 	local signal = Signal.new()
 
-	local connection = signal:Once(print, 'TEST1:')
+	local connection = signal:Once(print, "TEST1:")
 
-	signal:Fire 'Hello world!'
-	-- 'TEST1:	Hello world!'
+	signal:Fire("Hello world!") -- TEST1: Hello world!
 
-	signal:Fire 'Goodbye World!'
+	signal:Fire("Goodbye World!")
 	```
 ]=]
 function SignalMeta.Once<T..., U...>(self: Signal<U...>, fn: (...any) -> (), ...: T...)
