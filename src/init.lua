@@ -1,3 +1,5 @@
+--!nocheck
+
 -- The currently idle thread to run the next handler on
 local freeRunnerThread = nil
 
@@ -34,10 +36,10 @@ end
 
 --[=[
 	@within Connection
-	@interface Connection
+	@interface Connection<T...>
 	.Connected boolean
-	.Disconnect (Connection) -> ()
-	.Reconnect (Connection) -> ()
+	.Disconnect (Connection<T...>) -> ()
+	.Reconnect (Connection<T...>) -> ()
 ]=]
 
 local Connection = {}
@@ -60,7 +62,7 @@ Connection.__index = Connection
 
 	@within Connection
 ]=]
-function Connection.Disconnect(self: Connection)
+function Connection.Disconnect<T...>(self: Connection<T...>)
 	if not self.Connected then
 		return
 	end
@@ -106,7 +108,7 @@ end
 
 	@within Connection
 ]=]
-function Connection.Reconnect(self: Connection)
+function Connection.Reconnect<T...>(self: Connection<T...>)
 	if self.Connected then
 		return
 	end
@@ -127,9 +129,9 @@ end
 --[=[
 	@within Signal
 	@interface Signal
-	.Connect (Signal, fn: (...any) -> (), ...: any) -> Connection
-	.Once (Signal, fn: (...any) -> (), ...: any) -> Connection
-	.Fire (Signal, ...: any) -> ()
+	.Connect (Signal, fn: (...any) -> (), T...) -> Connection<T...>
+	.Once (Signal, fn: (...any) -> (), T...) -> Connection<T...>
+	.Fire (Signal, any) -> ()
 	.DisconnectAll (Signal) -> ()
 ]=]
 
@@ -142,7 +144,7 @@ SignalMeta.__index = SignalMeta
 
 	```lua
 	local LemonSignal = require(path.to.LemonSignal)
-	
+
 	local signal = LemonSignal.new()
 	```
 
@@ -155,7 +157,7 @@ function Signal.new()
 	}, SignalMeta)
 end
 
-export type Signal = typeof(Signal.new())
+export type Signal = typeof(Signal.new(...))
 
 --[=[
 	Connects a function to the signal and returns the connection. Passed variadic arguments will always be prepended to fired arguments.
@@ -176,7 +178,7 @@ export type Signal = typeof(Signal.new())
 
 	@within Signal
 ]=]
-function SignalMeta.Connect(self: Signal, fn: (...any) -> (), ...: any): Connection
+function SignalMeta.Connect<T...>(self: Signal, fn: (...any) -> (), ...: T...)
 	local cn = setmetatable({
 		Connected = true,
 		_signal = self,
@@ -197,38 +199,38 @@ function SignalMeta.Connect(self: Signal, fn: (...any) -> (), ...: any): Connect
 	return cn
 end
 
-export type Connection = typeof(SignalMeta:Connect())
+export type Connection<T...> = typeof(SignalMeta.Connect(...))
+
+local connect = SignalMeta.Connect
+local disconnect = Connection.Disconnect
 
 --[=[
-	Disconnects all connections currently connected to the signal. They may be reconnected later.
+	Connects a function to a signal and disconnects if after the first fire. Can be reconnected later.
 
 	```lua
-	local signal = LemonSignal.new()
+	local signal = Signal.new()
 
-	local connection1 = signal:Connect(print, "Test1:")
-	local connection2 = signal:Connect(print, "Test2:")
+	local connection = signal:Once(print, "Test:")
 
-	signal:Fire("Hello world!")
-	-- Test2: Hello world!
-	-- Test1: Hello world!
+	signal:Fire("Hello world!") -- Test: Hello world!
 
-	signal:DisconnectAll()
-
-	signal:Fire("Goodbye World!")
+	print(connection.Connected) -- false
 	```
 
 	@within Signal
 ]=]
-function SignalMeta.DisconnectAll(self: Signal)
-	-- Disconnect all handlers. Since we use a linked list it suffices to clear the
-	-- reference to the head handler.
-
-	self._handlerListHead = false
+function SignalMeta.Once<T...>(self: Signal, fn: (...any) -> (), ...: T...)
+	-- Implement :Once() in terms of a connection which disconnects
+	-- itself before running the handler.
+	local cn
+	cn = connect(self, function(...)
+		disconnect(cn)
+		fn(...)
+	end, ... :: any)
+	return cn
 end
 
 --[=[
-	@within Signal
-
 	Fires the signal and calls all connected functions with the connection's bound arguments and the fired arguments.
 
 	```lua
@@ -238,6 +240,8 @@ end
 
 	signal:Fire("Hello world!") -- Test: Hello world!
 	```
+
+	@within Signal
 ]=]
 function SignalMeta.Fire(self: Signal, ...: any)
 	-- Signal:Fire(...) implemented by running the handler functions on the
@@ -277,9 +281,6 @@ function SignalMeta.Fire(self: Signal, ...: any)
 	end
 end
 
-local connect = SignalMeta.Connect
-local disconnect = Connection.Disconnect
-
 --[=[
 	@within Signal
 
@@ -297,7 +298,7 @@ local disconnect = Connection.Disconnect
 	print(str2) -- world!
 	```
 ]=]
-function SignalMeta.Wait(self: Signal): any...
+function SignalMeta.Wait(self: Signal): ...any
 	-- Implement Signal:Wait() in terms of a temporary connection using
 	-- a Signal:Connect() which disconnects itself.
 
@@ -314,29 +315,30 @@ function SignalMeta.Wait(self: Signal): any...
 end
 
 --[=[
-	@within Signal
-
-	Connects a function to a signal and disconnects if after the first fire. Can be reconnected later.
+	Disconnects all connections currently connected to the signal. They may be reconnected later.
 
 	```lua
-	local signal = Signal.new()
+	local signal = LemonSignal.new()
 
-	local connection = signal:Once(print, "Test:")
+	local connection1 = signal:Connect(print, "Test1:")
+	local connection2 = signal:Connect(print, "Test2:")
 
-	signal:Fire("Hello world!") -- Test: Hello world!
+	signal:Fire("Hello world!")
+	-- Test2: Hello world!
+	-- Test1: Hello world!
 
-	print(connection.Connected) -- false
+	signal:DisconnectAll()
+
+	signal:Fire("Goodbye World!")
 	```
+
+	@within Signal
 ]=]
-function SignalMeta.Once(self: Signal, fn: (...any) -> (), ...: any): Connection
-	-- Implement :Once() in terms of a connection which disconnects
-	-- itself before running the handler.
-	local cn
-	cn = connect(self, function(...)
-		disconnect(cn)
-		fn(...)
-	end, ...)
-	return cn
+function SignalMeta.DisconnectAll(self: Signal)
+	-- Disconnect all handlers. Since we use a linked list it suffices to clear the
+	-- reference to the head handler.
+
+	self._handlerListHead = false
 end
 
 return Signal
