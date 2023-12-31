@@ -142,7 +142,7 @@ SignalMeta.__index = SignalMeta
 
 	```lua
 	local LemonSignal = require(path.to.LemonSignal)
-	
+
 	local signal = LemonSignal.new()
 	```
 
@@ -197,7 +197,7 @@ function SignalMeta.Connect(self: Signal, fn: (...any) -> (), ...: any): Connect
 	return cn
 end
 
-export type Connection = typeof(SignalMeta:Connect())
+export type Connection = typeof(SignalMeta:Connect(...))
 
 --[=[
 	Disconnects all connections currently connected to the signal. They may be reconnected later.
@@ -297,7 +297,7 @@ local disconnect = Connection.Disconnect
 	print(str2) -- world!
 	```
 ]=]
-function SignalMeta.Wait(self: Signal): any...
+function SignalMeta.Wait(self: Signal): any
 	-- Implement Signal:Wait() in terms of a temporary connection using
 	-- a Signal:Connect() which disconnects itself.
 
