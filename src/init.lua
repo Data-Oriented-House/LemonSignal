@@ -1,4 +1,6 @@
+--!optimize 2
 --!nocheck
+--!native
 
 -- The currently idle thread to run the next handler on
 local freeRunnerThread = nil
@@ -30,6 +32,18 @@ local function runEventHandlerInFreeThread()
 	end
 end
 
+-- To allow for better error reporting on Roblox, we'll use task.spawn
+-- with the erroring function and let the task scheduler log to the output.
+-- The if statement exists for normal error reporting outside of Roblox
+local function contextualError(fn, ...)
+	if task then
+		task.spawn(fn, ...)
+	else
+		local _, message = pcall(fn, ...)
+		error(message, 3)
+	end
+end
+
 --[=[
 	@class Connection
 ]=]
@@ -42,6 +56,25 @@ end
 	.Reconnect (Connection<T...>) -> ()
 ]=]
 
+--[=[
+	Indicates whether the connection is connected or not.
+
+	```lua
+	local signal = LemonSignal.new()
+
+	local connection = signal:Connect(print, "Hello world!")
+
+	print(connection.Connected) -- true
+
+	connection:Disconnect()
+
+	print(connection.Connected) -- false
+	```
+	@within Connection
+	@prop Connected boolean
+	@readonly
+]=]
+
 local Connection = {}
 Connection.__index = Connection
 
@@ -51,7 +84,7 @@ Connection.__index = Connection
 	```lua
 	local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, "Test")
+	local connection = signal:Connect(print, "Test:")
 
 	signal:Fire("Hello world!") -- Test: Hello world!
 
@@ -77,8 +110,9 @@ function Connection.Disconnect<T...>(self: Connection<T...>)
 		signal._handlerListHead = self._next
 	else
 		local prev = signal._handlerListHead
-		while prev and prev._next ~= self do
-			prev = prev._next
+		local next = prev._next
+		while prev and next ~= self do
+			prev = next
 		end
 		if prev then
 			prev._next = self._next
@@ -226,7 +260,7 @@ function SignalMeta.Once<T...>(self: Signal, fn: (...any) -> (), ...: T...)
 	cn = connect(self, function(...)
 		disconnect(cn)
 		fn(...)
-	end, ... :: any)
+	end, ...)
 	return cn
 end
 
@@ -257,9 +291,10 @@ function SignalMeta.Fire(self: Signal, ...: any)
 			coroutine.resume(freeRunnerThread)
 		end
 
-		local passed, message
 		if not cn._varargs then
-			passed, message = coroutine.resume(freeRunnerThread, cn._fn, ...)
+			if not coroutine.resume(freeRunnerThread, cn._fn, ...) then
+				contextualError(cn._fn, ...)
+			end
 		else
 			local args = cn._varargs
 			local len = #args
@@ -268,15 +303,16 @@ function SignalMeta.Fire(self: Signal, ...: any)
 				count += 1
 				args[count] = value
 			end
-			passed, message = coroutine.resume(freeRunnerThread, cn._fn, table.unpack(args))
+
+			if not coroutine.resume(freeRunnerThread, cn._fn, table.unpack(args)) then
+				contextualError(cn._fn, table.unpack(args))
+			end
+
 			for i = count, len + 1, -1 do
 				args[i] = nil
 			end
 		end
 
-		if not passed then
-			error(message, 2)
-		end
 		cn = cn._next
 	end
 end
@@ -299,17 +335,14 @@ end
 	```
 ]=]
 function SignalMeta.Wait(self: Signal): ...any
-	-- Implement Signal:Wait() in terms of a temporary connection using
-	-- a Signal:Connect() which disconnects itself.
+	-- Implement :Wait() in terms of a temporary connection using
+	-- a :Connect() which disconnects itself.
 
 	local thread = coroutine.running()
 	local cn
 	cn = connect(self, function(...)
 		disconnect(cn)
-		local passed, message = coroutine.resume(thread, ...)
-		if not passed then
-			error(message, 2)
-		end
+		coroutine.resume(thread, ...)
 	end)
 	return coroutine.yield()
 end
@@ -320,12 +353,12 @@ end
 	```lua
 	local signal = LemonSignal.new()
 
-	local connection1 = signal:Connect(print, "Test1:")
-	local connection2 = signal:Connect(print, "Test2:")
+	local connection1 = signal:Connect(print, "First:")
+	local connection2 = signal:Connect(print, "Second:")
 
 	signal:Fire("Hello world!")
-	-- Test2: Hello world!
-	-- Test1: Hello world!
+	-- Second: Hello world!
+	-- First: Hello world!
 
 	signal:DisconnectAll()
 

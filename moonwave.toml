@@ -34,7 +34,10 @@ baseUrl = "/LemonSignal/"
 tagline = "The Luau Signal Faster Than Most"
 
 [navbar]
-# hideableSidebar = true
+
+
+[navbar.logo]
+src = "favicon.ico"
 
 [footer]
 style = "dark"
