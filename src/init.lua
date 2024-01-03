@@ -32,18 +32,6 @@ local function runEventHandlerInFreeThread()
     end
 end
 
--- To allow for better error reporting on Roblox, we'll use task.spawn
--- with the erroring function and let the task scheduler log to the output.
--- The if statement exists for normal error reporting outside of Roblox
-local function contextualError(fn, ...)
-    if task then
-        task.spawn(fn, ...)
-    else
-        local _, message = pcall(fn, ...)
-        error(message, 3)
-    end
-end
-
 --[=[
 	@class Connection
 ]=]
@@ -70,6 +58,7 @@ end
 
 	print(connection.Connected) -- false
 	```
+	
 	@within Connection
 	@prop Connected boolean
 	@readonly
@@ -293,7 +282,7 @@ function SignalMeta.Fire(self: Signal, ...: any)
 
         if not cn._varargs then
             if not coroutine.resume(freeRunnerThread, cn._fn, ...) then
-                contextualError(cn._fn, ...)
+                cn._fn(...)
             end
         else
             local args = cn._varargs
@@ -305,7 +294,7 @@ function SignalMeta.Fire(self: Signal, ...: any)
             end
 
             if not coroutine.resume(freeRunnerThread, cn._fn, table.unpack(args)) then
-                contextualError(cn._fn, table.unpack(args))
+                cn._fn(table.unpack(args))
             end
 
             for i = count, len + 1, -1 do
