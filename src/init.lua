@@ -180,8 +180,6 @@ function Signal.new()
     }, SignalMeta)
 end
 
-local new = Signal.new
-
 export type Signal = typeof(Signal.new(...))
 
 --[=[
@@ -375,6 +373,7 @@ end
 --[=[
     Returns a new signal instance which fires along with the passed RBXScriptSignal, and a connection object
     which can be used to disable the signal.
+    Note that this function does not accept variadics.
 
     ```lua
     Players.PlayerAdded:Connect(function(player)
@@ -409,15 +408,18 @@ end
 
     It can also be used to mock Roblox event fires.
     ```lua
-    task.defer(playerAdded.Fire, playerAdded, Players:FindFirstChildOfClass("Player")) -- Player1 joined, from LemonSignal
+    playerAdded:Fire(playerAdded, Players:FindFirstChildOfClass("Player")) --> Player1 joined, from LemonSignal
     ```
 
     @within Signal
     @return Signal, RBXScriptConnection
 ]=]
 function Signal.wrap(signal: RBXScriptSignal): (Signal, RBXScriptConnection)
-	local lemonSignal = new()
-	local connection = connect(lemonSignal, function(...)
+	local lemonSignal = setmetatable({
+        _handlerListHead = false,
+    }, SignalMeta)
+
+	local connection = signal:Connect(function(...)
 		fire(lemonSignal, ...)
 	end)
 	return lemonSignal, connection
