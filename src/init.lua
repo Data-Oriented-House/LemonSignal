@@ -422,6 +422,7 @@ function Signal.wrap(signal: RBXScriptSignal): (Signal, RBXScriptConnection)
 	local connection = signal:Connect(function(...)
 		fire(lemonSignal, ...)
 	end)
+    
 	return lemonSignal, connection
 end
 
