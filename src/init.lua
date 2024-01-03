@@ -52,11 +52,11 @@ end
 
 	local connection = signal:Connect(print, "Hello world!")
 
-	print(connection.Connected) -- true
+	print(connection.Connected) --> true
 
 	connection:Disconnect()
 
-	print(connection.Connected) -- false
+	print(connection.Connected) --> false
 	```
 	
 	@within Connection
@@ -75,7 +75,7 @@ Connection.__index = Connection
 
 	local connection = signal:Connect(print, "Test:")
 
-	signal:Fire("Hello world!") -- Test: Hello world!
+	signal:Fire("Hello world!") --> Test: Hello world!
 
 	connection:Disconnect()
 
@@ -118,7 +118,7 @@ end
 
 	local connection = signal:Connect(print, "Test:")
 
-	signal:Fire("Hello world!") -- Test: Hello world!
+	signal:Fire("Hello world!") --> Test: Hello world!
 
 	connection:Disconnect()
 
@@ -126,7 +126,7 @@ end
 
 	connection:Reconnect()
 
-	signal:Fire("Hello again!") -- Test: Hello again!
+	signal:Fire("Hello again!") --> Test: Hello again!
 	```
 
 	@within Connection
@@ -195,8 +195,8 @@ export type Signal = typeof(Signal.new(...))
 	local connection2 = signal:Connect(print, "Hello")
 
 	signal:Fire("world!")
-	-- Hello world!
-	-- world!
+	--> Hello world!
+	--> world!
 	```
 
 	@within Signal
@@ -235,9 +235,9 @@ local disconnect = Connection.Disconnect
 
 	local connection = signal:Once(print, "Test:")
 
-	signal:Fire("Hello world!") -- Test: Hello world!
+	signal:Fire("Hello world!") --> Test: Hello world!
 
-	print(connection.Connected) -- false
+	print(connection.Connected) --> false
 	```
 
 	@within Signal
@@ -261,7 +261,7 @@ end
 
 	local connection = signal:Connect(print, "Test:")
 
-	signal:Fire("Hello world!") -- Test: Hello world!
+	signal:Fire("Hello world!") --> Test: Hello world!
 	```
 
 	@within Signal
@@ -306,6 +306,8 @@ function SignalMeta.Fire(self: Signal, ...: any)
     end
 end
 
+local fire = SignalMeta.Fire
+
 --[=[
 	Yields the coroutine until the signal is fired and returns the fired arguments.
 
@@ -317,8 +319,8 @@ end
 	end)
 
 	local str1, str2 = signal:Wait()
-	print(str1) -- Hello
-	print(str2) -- world!
+	print(str1) --> Hello
+	print(str2) --> world!
 	```
 
 	@within Signal
@@ -347,8 +349,8 @@ end
 	local connection2 = signal:Connect(print, "Second:")
 
 	signal:Fire("Hello world!")
-	-- Second: Hello world!
-	-- First: Hello world!
+	--> Second: Hello world!
+	--> First: Hello world!
 
 	signal:DisconnectAll()
 
@@ -366,6 +368,62 @@ function SignalMeta.DisconnectAll(self: Signal)
         disconnect(cn)
         cn = cn._next
     end
+end
+
+--[=[
+    Returns a new signal instance which fires along with the passed RBXScriptSignal, and a connection object
+    which can be used to disable the signal.
+    Note that this function does not accept variadics.
+
+    ```lua
+    Players.PlayerAdded:Connect(function(player)
+        print(player, "joined, from RBXScriptSignal")
+    end)
+
+    local playerAdded, signalHandler = LemonSignal.wrap(Players.PlayerAdded)
+    local connection = playerAdded:Connect(function(player)
+        print(player, "joined, from LemonSignal")
+    end)
+
+    -- Player1 joins after some time passes
+
+    --> Player1 joined, from RBXScriptSignal
+    --> Player1 joined, from LemonSignal
+
+    playerAdded:Wait()
+    connection:Disconnect()
+
+    -- Player2 joins after some time passes
+
+    --> Player2 joined, from RBXScriptSignal
+
+    playerAdded:Wait()
+    connection:Reconnect() -- Now we get our hands on more API!
+
+    -- Player3 joins after some time passes
+
+    --> Player3 joined, from RBXScriptSignal
+    --> Player3 joined, from LemonSignal
+    ```
+
+    It can also be used to mock Roblox event fires.
+    ```lua
+    playerAdded:Fire(playerAdded, Players:FindFirstChildOfClass("Player")) --> Player1 joined, from LemonSignal
+    ```
+
+    @within Signal
+    @return Signal, RBXScriptConnection
+]=]
+function Signal.wrap(signal: RBXScriptSignal): (Signal, RBXScriptConnection)
+	local lemonSignal = setmetatable({
+        _handlerListHead = false,
+    }, SignalMeta)
+
+	local connection = signal:Connect(function(...)
+		fire(lemonSignal, ...)
+	end)
+    
+	return lemonSignal, connection
 end
 
 return Signal
