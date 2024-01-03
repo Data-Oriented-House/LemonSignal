@@ -5,7 +5,7 @@ sidebar_position: 1
 # Introduction
 
 ## What's LemonSignal
-LemonSignal is a pure Luau signal implementation with huge performance improvements and new features like variadics and the ability to reconnect a preaviously disconnected connection using `:Reconnect`.
+LemonSignal is a pure Luau signal implementation aimed at replacing [GoodSignal](https://github.com/stravant/goodsignal) and [BindableEvent](https://create.roblox.com/docs/reference/engine/classes/BindableEvent), it has huge performance improvements and new features like variadics and the ability to reconnect a preaviously disconnected connection using `:Reconnect`.
 More on those features on the next page.
 
 ## API Design

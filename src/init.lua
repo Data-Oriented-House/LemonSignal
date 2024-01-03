@@ -11,37 +11,37 @@ local freeRunnerThread = nil
 -- If there was a currently idle runner thread already, that's okay, that old
 -- one will just get thrown and eventually GCed.
 local function acquireRunnerThreadAndCallEventHandler(fn, ...)
-	local acquiredRunnerThread = freeRunnerThread
-	freeRunnerThread = nil
-	fn(...)
-	-- The handler finished running, this runner thread is free again.
-	freeRunnerThread = acquiredRunnerThread
+    local acquiredRunnerThread = freeRunnerThread
+    freeRunnerThread = nil
+    fn(...)
+    -- The handler finished running, this runner thread is free again.
+    freeRunnerThread = acquiredRunnerThread
 end
 
 -- Coroutine runner that we create coroutines of. The coroutine can be
 -- repeatedly resumed with functions to run followed by the argument to run
 -- them with.
 local function runEventHandlerInFreeThread()
-	-- Note: We cannot use the initial set of arguments passed to
-	-- runEventHandlerInFreeThread for a call to the handler, because those
-	-- arguments would stay on the stack for the duration of the thread's
-	-- existence, temporarily leaking references. Without access to raw bytecode
-	-- there's no way for us to clear the "..." references from the stack.
-	while true do
-		acquireRunnerThreadAndCallEventHandler(coroutine.yield())
-	end
+    -- Note: We cannot use the initial set of arguments passed to
+    -- runEventHandlerInFreeThread for a call to the handler, because those
+    -- arguments would stay on the stack for the duration of the thread's
+    -- existence, temporarily leaking references. Without access to raw bytecode
+    -- there's no way for us to clear the "..." references from the stack.
+    while true do
+        acquireRunnerThreadAndCallEventHandler(coroutine.yield())
+    end
 end
 
 -- To allow for better error reporting on Roblox, we'll use task.spawn
 -- with the erroring function and let the task scheduler log to the output.
 -- The if statement exists for normal error reporting outside of Roblox
 local function contextualError(fn, ...)
-	if task then
-		task.spawn(fn, ...)
-	else
-		local _, message = pcall(fn, ...)
-		error(message, 3)
-	end
+    if task then
+        task.spawn(fn, ...)
+    else
+        local _, message = pcall(fn, ...)
+        error(message, 3)
+    end
 end
 
 --[=[
@@ -96,28 +96,28 @@ Connection.__index = Connection
 	@within Connection
 ]=]
 function Connection.Disconnect<T...>(self: Connection<T...>)
-	if not self.Connected then
-		return
-	end
-	self.Connected = false
+    if not self.Connected then
+        return
+    end
+    self.Connected = false
 
-	-- Unhook the node, but DON'T clear it. That way any fire calls that are
-	-- currently sitting on this node will be able to iterate forwards off of
-	-- it, but any subsequent fire calls will not hit it, and it will be GCed
-	-- when no more fire calls are sitting on it.
-	local signal = self._signal
-	if signal._handlerListHead == self then
-		signal._handlerListHead = self._next
-	else
-		local prev = signal._handlerListHead
-		local next = prev._next
-		while prev and next ~= self do
-			prev = next
-		end
-		if prev then
-			prev._next = self._next
-		end
-	end
+    -- Unhook the node, but DON'T clear it. That way any fire calls that are
+    -- currently sitting on this node will be able to iterate forwards off of
+    -- it, but any subsequent fire calls will not hit it, and it will be GCed
+    -- when no more fire calls are sitting on it.
+    local signal = self._signal
+    if signal._handlerListHead == self then
+        signal._handlerListHead = self._next
+    else
+        local prev = signal._handlerListHead
+        local next = prev._next
+        while prev and next ~= self do
+            prev = next
+        end
+        if prev then
+            prev._next = self._next
+        end
+    end
 end
 
 --[=[
@@ -143,17 +143,17 @@ end
 	@within Connection
 ]=]
 function Connection.Reconnect<T...>(self: Connection<T...>)
-	if self.Connected then
-		return
-	end
-	self.Connected = true
+    if self.Connected then
+        return
+    end
+    self.Connected = true
 
-	local signal = self._signal
-	local head = signal._handlerListHead
-	if head then
-		self._next = head
-	end
-	signal._handlerListHead = self
+    local signal = self._signal
+    local head = signal._handlerListHead
+    if head then
+        self._next = head
+    end
+    signal._handlerListHead = self
 end
 
 --[=[
@@ -186,9 +186,9 @@ SignalMeta.__index = SignalMeta
 	@return Signal
 ]=]
 function Signal.new()
-	return setmetatable({
-		_handlerListHead = false,
-	}, SignalMeta)
+    return setmetatable({
+        _handlerListHead = false,
+    }, SignalMeta)
 end
 
 export type Signal = typeof(Signal.new(...))
@@ -213,24 +213,24 @@ export type Signal = typeof(Signal.new(...))
 	@within Signal
 ]=]
 function SignalMeta.Connect<T...>(self: Signal, fn: (...any) -> (), ...: T...)
-	local cn = setmetatable({
-		Connected = true,
-		_signal = self,
-		_fn = fn,
-		_next = false,
-	}, Connection)
+    local cn = setmetatable({
+        Connected = true,
+        _signal = self,
+        _fn = fn,
+        _next = false,
+    }, Connection)
 
-	if ... then
-		cn._varargs = { ... }
-	end
+    if ... then
+        cn._varargs = { ... }
+    end
 
-	local head = self._handlerListHead
-	if head then
-		cn._next = head
-	end
+    local head = self._handlerListHead
+    if head then
+        cn._next = head
+    end
 
-	self._handlerListHead = cn
-	return cn
+    self._handlerListHead = cn
+    return cn
 end
 
 export type Connection<T...> = typeof(SignalMeta.Connect(...))
@@ -254,14 +254,14 @@ local disconnect = Connection.Disconnect
 	@within Signal
 ]=]
 function SignalMeta.Once<T...>(self: Signal, fn: (...any) -> (), ...: T...)
-	-- Implement :Once() in terms of a connection which disconnects
-	-- itself before running the handler.
-	local cn
-	cn = connect(self, function(...)
-		disconnect(cn)
-		fn(...)
-	end, ...)
-	return cn
+    -- Implement :Once() in terms of a connection which disconnects
+    -- itself before running the handler.
+    local cn
+    cn = connect(self, function(...)
+        disconnect(cn)
+        fn(...)
+    end, ...)
+    return cn
 end
 
 --[=[
@@ -278,49 +278,47 @@ end
 	@within Signal
 ]=]
 function SignalMeta.Fire(self: Signal, ...: any)
-	-- Signal:Fire(...) implemented by running the handler functions on the
-	-- coRunnerThread, and any time the resulting thread yielded without returning
-	-- to us, that means that it yielded to the Roblox scheduler and has been taken
-	-- over by Roblox scheduling, meaning we have to make a new coroutine runner.
+    -- Signal:Fire(...) implemented by running the handler functions on the
+    -- coRunnerThread, and any time the resulting thread yielded without returning
+    -- to us, that means that it yielded to the Roblox scheduler and has been taken
+    -- over by Roblox scheduling, meaning we have to make a new coroutine runner.
 
-	local cn = self._handlerListHead
-	while cn do
-		if not freeRunnerThread then
-			freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
-			-- Get the freeRunnerThread to the first yield
-			coroutine.resume(freeRunnerThread)
-		end
+    local cn = self._handlerListHead
+    while cn do
+        if not freeRunnerThread then
+            freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
+            -- Get the freeRunnerThread to the first yield
+            coroutine.resume(freeRunnerThread)
+        end
 
-		if not cn._varargs then
-			if not coroutine.resume(freeRunnerThread, cn._fn, ...) then
-				contextualError(cn._fn, ...)
-			end
-		else
-			local args = cn._varargs
-			local len = #args
-			local count = len
-			for _, value in { ... } do
-				count += 1
-				args[count] = value
-			end
+        if not cn._varargs then
+            if not coroutine.resume(freeRunnerThread, cn._fn, ...) then
+                contextualError(cn._fn, ...)
+            end
+        else
+            local args = cn._varargs
+            local len = #args
+            local count = len
+            for _, value in { ... } do
+                count += 1
+                args[count] = value
+            end
 
-			if not coroutine.resume(freeRunnerThread, cn._fn, table.unpack(args)) then
-				contextualError(cn._fn, table.unpack(args))
-			end
+            if not coroutine.resume(freeRunnerThread, cn._fn, table.unpack(args)) then
+                contextualError(cn._fn, table.unpack(args))
+            end
 
-			for i = count, len + 1, -1 do
-				args[i] = nil
-			end
-		end
+            for i = count, len + 1, -1 do
+                args[i] = nil
+            end
+        end
 
-		cn = cn._next
-	end
+        cn = cn._next
+    end
 end
 
 --[=[
-	@within Signal
-
-	Waits until the signal is fired and returns the fired arguments.
+	Yields the coroutine until the signal is fired and returns the fired arguments.
 
 	```lua
 	local signal = LemonSignal.new()
@@ -333,18 +331,21 @@ end
 	print(str1) -- Hello
 	print(str2) -- world!
 	```
+
+	@within Signal
+	@yields
 ]=]
 function SignalMeta.Wait(self: Signal): ...any
-	-- Implement :Wait() in terms of a temporary connection using
-	-- a :Connect() which disconnects itself.
+    -- Implement :Wait() in terms of a temporary connection using
+    -- a :Connect() which disconnects itself.
 
-	local thread = coroutine.running()
-	local cn
-	cn = connect(self, function(...)
-		disconnect(cn)
-		coroutine.resume(thread, ...)
-	end)
-	return coroutine.yield()
+    local thread = coroutine.running()
+    local cn
+    cn = connect(self, function(...)
+        disconnect(cn)
+        coroutine.resume(thread, ...)
+    end)
+    return coroutine.yield()
 end
 
 --[=[
@@ -368,10 +369,14 @@ end
 	@within Signal
 ]=]
 function SignalMeta.DisconnectAll(self: Signal)
-	-- Disconnect all handlers. Since we use a linked list it suffices to clear the
-	-- reference to the head handler.
+    -- Disconnect all handlers. Since we use a linked list it suffices to clear the
+    -- reference to the head handler.
 
-	self._handlerListHead = false
+    local cn = self._handlerListHead
+    while cn do
+        disconnect(cn)
+        cn = cn._next
+    end
 end
 
 return Signal
