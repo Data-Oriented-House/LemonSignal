@@ -59,3 +59,4 @@ signal:Connect(foo, "Hello")
 signal:Fire("world!")
 -- Hello world!
 ```
+

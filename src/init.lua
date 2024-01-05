@@ -2,89 +2,166 @@
 --!nocheck
 --!native
 
--- The currently idle thread to run the next handler on
-local freeRunnerThread = nil
+export type Connection<U...> = {
+    Connected: boolean,
+    Disconnect: (self: Connection<U...>) -> (),
+    Destroy: (self: Connection<U...>) -> (),
+}
+
+export type Signal<T...> = {
+    RBXScriptConnection: RBXScriptConnection?,
+    Connect: <U...>(self: Signal<T...>, fn: (...unknown) -> (), U...) -> Connection<U...>,
+    Once: <U...>(self: Signal<T...>, fn: (...unknown) -> (), U...) -> Connection<U...>,
+    Wait: (self: Signal<T...>) -> T...,
+    Fire: (self: Signal<T...>, T...) -> (),
+    DisconnectAll: (self: Signal<T...>) -> (),
+    Destroy: (self: Signal<T...>) -> (),
+}
+
+--[=[
+    @class Connection
+]=]
+
+--[=[
+    @within Connection
+    @interface Connection<U...>
+    .Connected boolean
+    .Disconnect (Connection<U...>) -> ()
+    .Reconnect (Connection<U...>) -> ()
+]=]
+
+--[=[
+    Indicates whether the connection is connected or not.
+
+    ```lua
+    local signal = LemonSignal.new()
+
+    local connection = signal:Connect(print, "Hello world!")
+
+    print(connection.Connected) --> true
+
+    connection:Disconnect()
+
+    print(connection.Connected) --> false
+    ```
+
+    @within Connection
+    @prop Connected boolean
+    @readonly
+]=]
+
+--[=[
+    @class Signal
+]=]
+
+--[=[
+    @within Signal
+    @interface Signal
+    .RBXScriptConnection: RBXScriptConnection?,
+    .Connect: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
+    .Once: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
+    .Wait: (self: Signal<T...>) -> T...,
+    .Fire: (self: Signal<T...>, T...) -> (),
+    .DisconnectAll: (self: Signal<T...>) -> (),
+    .Destroy: (self: Signal<T...>) -> ()
+]=]
+
+--[=[
+    The RBXScriptConnection that gets made when using [.wrap](#wrap).
+    It gets disconnected and removed when using [:Destroy](#Destroy).
+
+    ```lua
+    local bindable = Instance.new("BindableEvent")
+
+    local signal = LemonSignal.wrap(bindable.Event)
+
+    local scriptConnection = signal.RBXScriptConnection
+
+    print(signal.RBXScriptConnection) --> Connection
+
+    signal:Destroy()
+
+    print(scriptConnection.Connected) --> false
+    print(signal.RBXScriptConnection) --> nil
+    ```
+
+    @within Signal
+    @prop RBXScriptConnection RBXScriptConnection?
+    @readonly
+]=]
 
 -- Function which acquires the currently idle handler runner thread, runs the
 -- function fn on it, and then releases the thread, returning it to being the
 -- currently idle one.
 -- If there was a currently idle runner thread already, that's okay, that old
 -- one will just get thrown and eventually GCed.
-local function acquireRunnerThreadAndCallEventHandler(fn, ...)
-    local acquiredRunnerThread = freeRunnerThread
-    freeRunnerThread = nil
+local function acquireRunnerThreadAndCallEventHandler(signal: Signal, fn, ...)
+    local acquiredRunnerThread = signal._freeRunnerThread
+    signal._freeRunnerThread = false
     fn(...)
     -- The handler finished running, this runner thread is free again.
-    freeRunnerThread = acquiredRunnerThread
+    signal._freeRunnerThread = acquiredRunnerThread
 end
 
 -- Coroutine runner that we create coroutines of. The coroutine can be
 -- repeatedly resumed with functions to run followed by the argument to run
 -- them with.
-local function runEventHandlerInFreeThread()
-    -- Note: We cannot use the initial set of arguments passed to
-    -- runEventHandlerInFreeThread for a call to the handler, because those
-    -- arguments would stay on the stack for the duration of the thread's
-    -- existence, temporarily leaking references. Without access to raw bytecode
-    -- there's no way for us to clear the "..." references from the stack.
+local function runEventHandlerInFreeThread(signal: Signal, ...)
+    acquireRunnerThreadAndCallEventHandler(signal, ...)
     while true do
         acquireRunnerThreadAndCallEventHandler(coroutine.yield())
     end
 end
 
---[=[
-	@class Connection
-]=]
+local function contextualError(cn: Connection, message: string)
+    if task then
+        local fullName = if cn._thread then debug.info(cn._thread, 1, "s") else debug.info(cn._fn, "s")
+        local parent = game
+        for _, childName in string.split(fullName, ".") do
+            parent = parent:FindFirstChild(childName)
+            if not parent then
+                break
+            end
+        end
+        if parent then
+            task.spawn(warn, parent, "<-- Press to select the script.")
+        end
+    end
 
---[=[
-	@within Connection
-	@interface Connection<T...>
-	.Connected boolean
-	.Disconnect (Connection<T...>) -> ()
-	.Reconnect (Connection<T...>) -> ()
-]=]
+    error(message, 0)
+end
 
---[=[
-	Indicates whether the connection is connected or not.
-
-	```lua
-	local signal = LemonSignal.new()
-
-	local connection = signal:Connect(print, "Hello world!")
-
-	print(connection.Connected) --> true
-
-	connection:Disconnect()
-
-	print(connection.Connected) --> false
-	```
-	
-	@within Connection
-	@prop Connected boolean
-	@readonly
-]=]
+-- Cached functions to avoid using the `:` which is slightly slower
+local disconnectAll
+local disconnect
+local connect
+local fire
+local rbxDisconnect
+local rbxConnect
 
 local Connection = {}
 Connection.__index = Connection
 
 --[=[
-	Disconnects the connection from the signal. May be reconnected later using :Reconnect().
+    Disconnects the connection from the signal. May be reconnected later using :Reconnect().
 
-	```lua
-	local signal = LemonSignal.new()
+    ```lua
+    local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, "Test:")
+    local connection = signal:Connect(print, "Test:")
 
-	signal:Fire("Hello world!") --> Test: Hello world!
+    signal:Fire("Hello world!") --> Test: Hello world!
 
-	connection:Disconnect()
+    connection:Disconnect()
 
-	signal:Fire("Goodbye world!")
-	```
+    signal:Fire("Goodbye world!")
+    ```
 
-	@within Connection
+    @within Connection
+    @method Disconnect
+    @tag Method
 ]=]
-function Connection.Disconnect<T...>(self: Connection<T...>)
+function Connection.Disconnect<U...>(self: Connection<U...>)
     if not self.Connected then
         return
     end
@@ -110,28 +187,30 @@ function Connection.Disconnect<T...>(self: Connection<T...>)
 end
 
 --[=[
-	Reconnects the connection to the signal again. If it's a :Once connection it will be
-	disconnected after the next signal fire.
+    Reconnects the connection to the signal again. If it's a :Once connection it will be
+    disconnected after the next signal fire.
 
-	```lua
-	local signal = LemonSignal.new()
+    ```lua
+    local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, "Test:")
+    local connection = signal:Connect(print, "Test:")
 
-	signal:Fire("Hello world!") --> Test: Hello world!
+    signal:Fire("Hello world!") --> Test: Hello world!
 
-	connection:Disconnect()
+    connection:Disconnect()
 
-	signal:Fire("Goodbye world!")
+    signal:Fire("Goodbye world!")
 
-	connection:Reconnect()
+    connection:Reconnect()
 
-	signal:Fire("Hello again!") --> Test: Hello again!
-	```
+    signal:Fire("Hello again!") --> Test: Hello again!
+    ```
 
-	@within Connection
+    @within Connection
+    @method Reconnect
+    @tag Method
 ]=]
-function Connection.Reconnect<T...>(self: Connection<T...>)
+function Connection.Reconnect<U...>(self: Connection<U...>)
     if self.Connected then
         return
     end
@@ -145,63 +224,105 @@ function Connection.Reconnect<T...>(self: Connection<T...>)
     signal._handlerListHead = self
 end
 
---[=[
-	@class Signal
-]=]
-
---[=[
-	@within Signal
-	@interface Signal
-	.Connect (Signal, fn: (...any) -> (), T...) -> Connection<T...>
-	.Once (Signal, fn: (...any) -> (), T...) -> Connection<T...>
-	.Fire (Signal, any) -> ()
-	.DisconnectAll (Signal) -> ()
-]=]
-
 local Signal = {}
 local SignalMeta = {}
 SignalMeta.__index = SignalMeta
 
 --[=[
-	Returns a new signal instance which can be used to connect functions.
+    Returns a new signal instance which can be used to connect functions.
 
-	```lua
-	local LemonSignal = require(path.to.LemonSignal)
+    ```lua
+    local LemonSignal = require(path.to.LemonSignal)
 
-	local signal = LemonSignal.new()
-	```
+    local signal = LemonSignal.new()
+    ```
 
-	@within Signal
-	@return Signal
+    @within Signal
+    @return Signal
+    @tag Constructor
 ]=]
-function Signal.new()
+function Signal.new<T...>(): Signal<T...>
     return setmetatable({
         _handlerListHead = false,
+        _freeRunnerThread = false,
     }, SignalMeta)
 end
 
-export type Signal = typeof(Signal.new(...))
+--[=[
+    Returns a new signal instance which fires along with the passed RBXScriptSignal, and a connection object
+    which can be used to disable the signal.
+
+    ```lua
+    Players.PlayerAdded:Connect(function(player)
+        print(player, "joined, from RBXScriptSignal")
+    end)
+
+    local playerAdded = LemonSignal.wrap(Players.PlayerAdded)
+    local connection = playerAdded:Connect(function(player)
+        print(player, "joined, from LemonSignal")
+    end)
+
+    playerAdded:Wait()
+    -- Player1 joins after some time passes
+
+    --> Player1 joined, from RBXScriptSignal
+    --> Player1 joined, from LemonSignal
+
+    connection:Disconnect()
+    playerAdded:Wait()
+    -- Player2 joins after some time passes
+
+    --> Player2 joined, from RBXScriptSignal
+
+    connection:Reconnect() -- Now we get our hands on more API!
+    -- Player3 joins after some time passes
+
+    --> Player3 joined, from RBXScriptSignal
+    --> Player3 joined, from LemonSignal
+
+    -- It can also be used to mock Roblox event fires.
+    playerAdded:Fire(playerAdded, Players:FindFirstChildOfClass("Player")) --> Player1 joined, from LemonSignal
+    ```
+
+    @within Signal
+    @return Signal
+    @tag Constructor
+]=]
+function Signal.wrap<T...>(signal: RBXScriptSignal): Signal<T...>
+    local lemonSignal = setmetatable({
+        _handlerListHead = false,
+        _freeRunnerThread = false,
+    }, SignalMeta)
+
+    lemonSignal.RBXScriptConnection = rbxConnect(signal, function(...)
+        fire(lemonSignal, ...)
+    end)
+
+    return lemonSignal
+end
 
 --[=[
-	Connects a function to the signal and returns the connection. Passed variadic arguments will always be prepended to fired arguments.
+    Connects a function to the signal and returns the connection. Passed variadic arguments will always be prepended to fired arguments.
 
-	```lua
-	local signal = LemonSignal.new()
+    ```lua
+    local signal = LemonSignal.new()
 
-	local connection1 = signal:Connect(function(str: string)
-		print(str)
-	end)
+    local connection1 = signal:Connect(function(str: string)
+        print(str)
+    end)
 
-	local connection2 = signal:Connect(print, "Hello")
+    local connection2 = signal:Connect(print, "Hello")
 
-	signal:Fire("world!")
-	--> Hello world!
-	--> world!
-	```
+    signal:Fire("world!")
+    --> Hello world!
+    --> world!
+    ```
 
-	@within Signal
+    @within Signal
+    @method Connect
+    @tag Method
 ]=]
-function SignalMeta.Connect<T...>(self: Signal, fn: (...any) -> (), ...: T...)
+function SignalMeta.Connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...): Connection<U...>
     local cn = setmetatable({
         Connected = true,
         _signal = self,
@@ -222,27 +343,24 @@ function SignalMeta.Connect<T...>(self: Signal, fn: (...any) -> (), ...: T...)
     return cn
 end
 
-export type Connection<T...> = typeof(SignalMeta.Connect(...))
-
-local connect = SignalMeta.Connect
-local disconnect = Connection.Disconnect
-
 --[=[
-	Connects a function to a signal and disconnects if after the first fire. Can be reconnected later.
+    Connects a function to a signal and disconnects if after the first fire. Can be reconnected later.
 
-	```lua
-	local signal = Signal.new()
+    ```lua
+    local signal = Signal.new()
 
-	local connection = signal:Once(print, "Test:")
+    local connection = signal:Once(print, "Test:")
 
-	signal:Fire("Hello world!") --> Test: Hello world!
+    signal:Fire("Hello world!") --> Test: Hello world!
 
-	print(connection.Connected) --> false
-	```
+    print(connection.Connected) --> false
+    ```
 
-	@within Signal
+    @within Signal
+    @method Once
+    @tag Method
 ]=]
-function SignalMeta.Once<T...>(self: Signal, fn: (...any) -> (), ...: T...)
+function SignalMeta.Once<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...)
     -- Implement :Once() in terms of a connection which disconnects
     -- itself before running the handler.
     local cn
@@ -254,35 +372,38 @@ function SignalMeta.Once<T...>(self: Signal, fn: (...any) -> (), ...: T...)
 end
 
 --[=[
-	Fires the signal and calls all connected functions with the connection's bound arguments and the fired arguments.
+    Fires the signal and calls all connected functions with the connection's bound arguments and the fired arguments.
 
-	```lua
-	local signal = LemonSignal.new()
+    ```lua
+    local signal = LemonSignal.new()
 
-	local connection = signal:Connect(print, "Test:")
+    local connection = signal:Connect(print, "Test:")
 
-	signal:Fire("Hello world!") --> Test: Hello world!
-	```
+    signal:Fire("Hello world!") --> Test: Hello world!
+    ```
 
-	@within Signal
+    @within Signal
+    @method Fire
+    @tag Method
 ]=]
-function SignalMeta.Fire(self: Signal, ...: any)
-    -- Signal:Fire(...) implemented by running the handler functions on the
-    -- coRunnerThread, and any time the resulting thread yielded without returning
+function SignalMeta.Fire<T...>(self: Signal<T...>, ...: any)
+    -- :Fire(...) implemented by running the handler functions on the
+    -- freeRunnerThread, and any time the resulting thread yielded without returning
     -- to us, that means that it yielded to the Roblox scheduler and has been taken
     -- over by Roblox scheduling, meaning we have to make a new coroutine runner.
 
     local cn = self._handlerListHead
     while cn do
+        local freeRunnerThread = self._freeRunnerThread
         if not freeRunnerThread then
-            freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
-            -- Get the freeRunnerThread to the first yield
-            coroutine.resume(freeRunnerThread)
+            self._freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
+            freeRunnerThread = self._freeRunnerThread
         end
 
         if not cn._varargs then
-            if not coroutine.resume(freeRunnerThread, cn._fn, ...) then
-                cn._fn(...)
+            local passed, message = coroutine.resume(freeRunnerThread, self, cn._fn, ...)
+            if not passed then
+                contextualError(cn, message)
             end
         else
             local args = cn._varargs
@@ -293,8 +414,9 @@ function SignalMeta.Fire(self: Signal, ...: any)
                 args[count] = value
             end
 
-            if not coroutine.resume(freeRunnerThread, cn._fn, table.unpack(args)) then
-                cn._fn(table.unpack(args))
+            local passed, message = coroutine.resume(freeRunnerThread, self, cn._fn, table.unpack(args))
+            if not passed then
+                contextualError(cn, message)
             end
 
             for i = count, len + 1, -1 do
@@ -306,27 +428,27 @@ function SignalMeta.Fire(self: Signal, ...: any)
     end
 end
 
-local fire = SignalMeta.Fire
-
 --[=[
-	Yields the coroutine until the signal is fired and returns the fired arguments.
+    Yields the coroutine until the signal is fired and returns the fired arguments.
 
-	```lua
-	local signal = LemonSignal.new()
+    ```lua
+    local signal = LemonSignal.new()
 
-	task.delay(1, function()
-		signal:Fire("Hello", "world!")
-	end)
+    task.delay(1, function()
+        signal:Fire("Hello", "world!")
+    end)
 
-	local str1, str2 = signal:Wait()
-	print(str1) --> Hello
-	print(str2) --> world!
-	```
+    local str1, str2 = signal:Wait()
+    print(str1) --> Hello
+    print(str2) --> world!
+    ```
 
-	@within Signal
-	@yields
+    @within Signal
+    @method Wait
+    @tag Method
+    @yields
 ]=]
-function SignalMeta.Wait(self: Signal): ...any
+function SignalMeta.Wait<T...>(self: Signal<T...>): ...any
     -- Implement :Wait() in terms of a temporary connection using
     -- a :Connect() which disconnects itself.
 
@@ -334,35 +456,40 @@ function SignalMeta.Wait(self: Signal): ...any
     local cn
     cn = connect(self, function(...)
         disconnect(cn)
-        coroutine.resume(thread, ...)
+        local passed, message = coroutine.resume(thread, ...)
+        if not passed then
+            -- The :Fire call will pick up on this error, cn._thread is used to
+            -- to get the script the error originated from, wonky stuff
+            cn._thread = thread
+            error(message, 0)
+        end
     end)
     return coroutine.yield()
 end
 
 --[=[
-	Disconnects all connections currently connected to the signal. They may be reconnected later.
+    Disconnects all connections currently connected to the signal. They may be reconnected later.
 
-	```lua
-	local signal = LemonSignal.new()
+    ```lua
+    local signal = LemonSignal.new()
 
-	local connection1 = signal:Connect(print, "First:")
-	local connection2 = signal:Connect(print, "Second:")
+    local connection1 = signal:Connect(print, "First:")
+    local connection2 = signal:Connect(print, "Second:")
 
-	signal:Fire("Hello world!")
-	--> Second: Hello world!
-	--> First: Hello world!
+    signal:Fire("Hello world!")
+    --> Second: Hello world!
+    --> First: Hello world!
 
-	signal:DisconnectAll()
+    signal:DisconnectAll()
 
-	signal:Fire("Goodbye World!")
-	```
+    signal:Fire("Goodbye World!")
+    ```
 
-	@within Signal
+    @within Signal
+    @method DisconnectAll
+    @tag Method
 ]=]
-function SignalMeta.DisconnectAll(self: Signal)
-    -- Disconnect all handlers. Since we use a linked list it suffices to clear the
-    -- reference to the head handler.
-
+function SignalMeta.DisconnectAll<T...>(self: Signal<T...>)
     local cn = self._handlerListHead
     while cn do
         disconnect(cn)
@@ -371,59 +498,44 @@ function SignalMeta.DisconnectAll(self: Signal)
 end
 
 --[=[
-    Returns a new signal instance which fires along with the passed RBXScriptSignal, and a connection object
-    which can be used to disable the signal.
-    Note that this function does not accept variadics.
+    Similar to DisconnectAll but also disconnects the RBXScriptConnection made using `.warp`.
+    Contrary to the method's name, the signal remains usable.
 
     ```lua
-    Players.PlayerAdded:Connect(function(player)
-        print(player, "joined, from RBXScriptSignal")
-    end)
+    local signal = LemonSignal.new()
 
-    local playerAdded, signalHandler = LemonSignal.wrap(Players.PlayerAdded)
-    local connection = playerAdded:Connect(function(player)
-        print(player, "joined, from LemonSignal")
-    end)
+    local connection = signal:Connect(print, "Hello")
 
-    -- Player1 joins after some time passes
+    signal:Fire("world!")
+    --> Hello world!
 
-    --> Player1 joined, from RBXScriptSignal
-    --> Player1 joined, from LemonSignal
+    signal:Destroy()
 
-    playerAdded:Wait()
-    connection:Disconnect()
-
-    -- Player2 joins after some time passes
-
-    --> Player2 joined, from RBXScriptSignal
-
-    playerAdded:Wait()
-    connection:Reconnect() -- Now we get our hands on more API!
-
-    -- Player3 joins after some time passes
-
-    --> Player3 joined, from RBXScriptSignal
-    --> Player3 joined, from LemonSignal
-    ```
-
-    It can also be used to mock Roblox event fires.
-    ```lua
-    playerAdded:Fire(playerAdded, Players:FindFirstChildOfClass("Player")) --> Player1 joined, from LemonSignal
+    signal:Fire("Goodbye World!")
     ```
 
     @within Signal
-    @return Signal, RBXScriptConnection
+    @method Destroy
+    @tag Method
 ]=]
-function Signal.wrap(signal: RBXScriptSignal): (Signal, RBXScriptConnection)
-	local lemonSignal = setmetatable({
-        _handlerListHead = false,
-    }, SignalMeta)
+function SignalMeta.Destroy<T...>(self: Signal<T...>)
+    disconnectAll(self)
+    local cn = self.RBXScriptConnection
+    if cn then
+        rbxDisconnect(cn)
+        self.RBXScriptConnection = nil
+    end
+end
 
-	local connection = signal:Connect(function(...)
-		fire(lemonSignal, ...)
-	end)
-    
-	return lemonSignal, connection
+disconnectAll = SignalMeta.DisconnectAll
+disconnect = Connection.Disconnect
+connect = SignalMeta.Connect
+fire = SignalMeta.Fire
+if task then
+    local bindable = Instance.new("BindableEvent")
+    rbxConnect = bindable.Event.Connect
+    rbxDisconnect = bindable.Event:Connect(function() end).Disconnect
+    bindable:Destroy()
 end
 
 return Signal

@@ -7,6 +7,11 @@ classOrder = [
 	"Signal",
 	"Connection"
 ]
+apiCategories = [
+	"Constructor",
+	"Method",
+	"Utility"
+]
 
 [home]
 enabled = true
@@ -32,9 +37,6 @@ projectName = "LemonSignal"
 url = "https://data-oriented-house.github.io"
 baseUrl = "/LemonSignal/"
 tagline = "The Luau Signal Faster Than Most"
-
-[navbar]
-
 
 [navbar.logo]
 src = "favicon.ico"
