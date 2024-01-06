@@ -173,17 +173,16 @@ function Connection.Disconnect<U...>(self: Connection<U...>)
     -- when no more fire calls are sitting on it.
     local signal = self._signal
     if signal._handlerListHead == self then
-        signal._handlerListHead = self._next
-    else
-        local prev = signal._handlerListHead
-        local next = prev._next
-        while prev and next ~= self do
-            prev = next
-        end
-        if prev then
-            prev._next = self._next
-        end
-    end
+		signal._handlerListHead = self._next
+	else
+		local prev = signal._handlerListHead
+		while prev and prev._next ~= self do
+			prev = prev._next
+		end
+		if prev then
+			prev._next = self._next
+		end
+	end
 end
 
 --[=[
