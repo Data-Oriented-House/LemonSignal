@@ -133,7 +133,6 @@ end
 
 -- Cached functions to avoid using the `:` which is slightly slower
 local disconnectAll
-local disconnect
 local connect
 local fire
 local rbxDisconnect
@@ -161,7 +160,7 @@ Connection.__index = Connection
     @method Disconnect
     @tag Method
 ]=]
-function Connection.Disconnect<U...>(self: Connection<U...>)
+local function disconnect<U...>(self: Connection<U...>)
 	if not self.Connected then
 		return
 	end
@@ -187,6 +186,7 @@ function Connection.Disconnect<U...>(self: Connection<U...>)
 		signal._handlerListHead = next
 	end
 end
+Connection.Disconnect = disconnect
 
 --[=[
     Reconnects the connection to the signal again. If it's a :Once connection it will be
@@ -533,7 +533,6 @@ function Signal.Destroy<T...>(self: Signal<T...>)
 end
 
 disconnectAll = Signal.DisconnectAll
-disconnect = Connection.Disconnect
 connect = Signal.Connect
 fire = Signal.Fire
 if task then
