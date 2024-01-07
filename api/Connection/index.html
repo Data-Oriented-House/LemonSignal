@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v2.3.1">
 <title data-rh="true">Connection | LemonSignal</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://data-oriented-house.github.io/LemonSignal/api/Connection"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Connection | LemonSignal"><link data-rh="true" rel="icon" href="/LemonSignal/favicon.ico"><link data-rh="true" rel="canonical" href="https://data-oriented-house.github.io/LemonSignal/api/Connection"><link data-rh="true" rel="alternate" href="https://data-oriented-house.github.io/LemonSignal/api/Connection" hreflang="en"><link data-rh="true" rel="alternate" href="https://data-oriented-house.github.io/LemonSignal/api/Connection" hreflang="x-default"><link rel="stylesheet" href="/LemonSignal/assets/css/styles.d68860a6.css">
-<link rel="preload" href="/LemonSignal/assets/js/runtime~main.487855ef.js" as="script">
-<link rel="preload" href="/LemonSignal/assets/js/main.93514fce.js" as="script">
+<link rel="preload" href="/LemonSignal/assets/js/runtime~main.b70ed7b4.js" as="script">
+<link rel="preload" href="/LemonSignal/assets/js/main.cfc5865a.js" as="script">
 </head>
 <body class="navigation-with-keyboard">
 <script>!function(){function e(e){document.documentElement.setAttribute("data-theme",e)}var t=function(){var e=null;try{e=localStorage.getItem("theme")}catch(e){}return e}();null!==t?e(t):window.matchMedia("(prefers-color-scheme: dark)").matches?e("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,e("light"))}()</script><div id="__docusaurus">
@@ -21,7 +21,7 @@ connection<span class="token punctuation">:</span><span class="token function">D
 
 <span class="token function">print</span><span class="token punctuation">(</span>connection<span class="token punctuation">.</span>Connected<span class="token punctuation">)</span> <span class="token comment">--> false</span>
 </code></pre>
-</div><h2 class="anchor anchorWithStickyNavbar_LWe7" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Disconnect"><code style="text-decoration:none">Disconnect</code><a href="#Disconnect" class="hash-link" aria-label="Direct link to Disconnect" title="Direct link to Disconnect">​</a></h3><span class="docTag__6UZ" style="border-color:#79b473;color:#79b473">Method</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/data-oriented-house/LemonSignal/blob/main/src/init.lua#L164"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Connection<!-- -->:</code><code class="green_DgR4">Disconnect</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
+</div><h2 class="anchor anchorWithStickyNavbar_LWe7" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Disconnect"><code style="text-decoration:none">Disconnect</code><a href="#Disconnect" class="hash-link" aria-label="Direct link to Disconnect" title="Direct link to Disconnect">​</a></h3><span class="docTag__6UZ" style="border-color:#79b473;color:#79b473">Method</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/data-oriented-house/LemonSignal/blob/main/src/init.lua#L163"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Connection<!-- -->:</code><code class="green_DgR4">Disconnect</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
 <p>Disconnects the connection from the signal. May be reconnected later using :Reconnect().</p>
 <pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> signal <span class="token operator">=</span> LemonSignal<span class="token punctuation">.</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 
@@ -33,7 +33,7 @@ connection<span class="token punctuation">:</span><span class="token function">D
 
 signal<span class="token punctuation">:</span><span class="token function">Fire</span><span class="token punctuation">(</span><span class="token string">"Goodbye world!"</span><span class="token punctuation">)</span>
 </code></pre>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Reconnect"><code style="text-decoration:none">Reconnect</code><a href="#Reconnect" class="hash-link" aria-label="Direct link to Reconnect" title="Direct link to Reconnect">​</a></h3><span class="docTag__6UZ" style="border-color:#79b473;color:#79b473">Method</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/data-oriented-house/LemonSignal/blob/main/src/init.lua#L213"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Connection<!-- -->:</code><code class="green_DgR4">Reconnect</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Reconnect"><code style="text-decoration:none">Reconnect</code><a href="#Reconnect" class="hash-link" aria-label="Direct link to Reconnect" title="Direct link to Reconnect">​</a></h3><span class="docTag__6UZ" style="border-color:#79b473;color:#79b473">Method</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/data-oriented-house/LemonSignal/blob/main/src/init.lua#L215"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Connection<!-- -->:</code><code class="green_DgR4">Reconnect</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
 <p>
   Reconnects the connection to the signal again. If it's a :Once connection it will be
   disconnected after the next signal fire.
@@ -64,7 +64,7 @@ signal<span class="token punctuation">:</span><span class="token function">Fire<
                 &quot;Method&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 164,
+                &quot;line&quot;: 163,
                 &quot;path&quot;: &quot;src/init.lua&quot;
             }
         },
@@ -78,7 +78,7 @@ signal<span class="token punctuation">:</span><span class="token function">Fire<
                 &quot;Method&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 213,
+                &quot;line&quot;: 215,
                 &quot;path&quot;: &quot;src/init.lua&quot;
             }
         }
@@ -129,7 +129,7 @@ signal<span class="token punctuation">:</span><span class="token function">Fire<
         &quot;path&quot;: &quot;src/init.lua&quot;
     }
 }</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#Connection&lt;U...&gt;" class="table-of-contents__link toc-highlight">Connection<u...></u...></a></li></ul></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#Connected" class="table-of-contents__link toc-highlight">Connected</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Method" class="table-of-contents__link toc-highlight">Method</a><ul><li><a href="#Disconnect" class="table-of-contents__link toc-highlight">:Disconnect</a></li><li><a href="#Reconnect" class="table-of-contents__link toc-highlight">:Reconnect</a></li></ul></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2023 Aspecky. Built with Moonwave and Docusaurus</div></div></div></footer></div>
-<script src="/LemonSignal/assets/js/runtime~main.487855ef.js"></script>
-<script src="/LemonSignal/assets/js/main.93514fce.js"></script>
+<script src="/LemonSignal/assets/js/runtime~main.b70ed7b4.js"></script>
+<script src="/LemonSignal/assets/js/main.cfc5865a.js"></script>
 </body>
 </html>
