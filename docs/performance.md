@@ -8,8 +8,8 @@ LemonSignal takes advantage of Luau's [inline caching](https://luau-lang.org/per
 ## Benchmark
 To verify which implementation is best, I made a barebones version of [singly linked list](https://gist.github.com/Aspecky/9bc1daa8a17d2b698d127eff24e82bf3), [doubly linked list](https://gist.github.com/Aspecky/df557c8e2f486eeb5eee4690e67da312), [unordered array](https://gist.github.com/Aspecky/fa28639259f94ce4586a069b16cf44e3) and [dictionary](https://gist.github.com/Aspecky/4cd07bc64ed1016ee6c73baad24bfb80) signals and benched them using [boatbomber's bechmarker plugin](https://boatbomber.itch.io/benchmarker).
 
-:::note TL;DR
-Doubly linked list fires as fast as an array, connects, disconnects and reconnects almost as fast as a dictionary, and unlike the two it retains fire order.
+:::note
+The execution times are not meant to measure the absolute time it takes for a method to run, they are only meant to be used relative to eachother to see which one runs faster.
 :::
 
 ### .new
