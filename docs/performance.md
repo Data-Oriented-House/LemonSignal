@@ -35,3 +35,6 @@ We can conclude that a doubly linked list strikes the best balance out of the ot
 * Ordered fire
 * Fast iteration making :Fire run as fast as an array
 * Solves singly's O(n) disconnect by making it O(1) which makes it as fast as the other 2
+
+All the signal implementations as ModuleScripts are here [signals.rbxm](\benchmarks\signals.rbxm)<br></br>
+All the `.bench` ModuleScripts that the benchmarker plugin uses are here [benches.rbxm](\benchmarks\benches.rbxm)
