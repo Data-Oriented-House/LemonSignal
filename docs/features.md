@@ -8,7 +8,9 @@ In addition to the features you'd expect from a signal, LemonSignal provides two
 ## Reconnect
 There are occasions where you `:Disconnect` and end up calling `:Connect` again with a new function, with `:Reconnect` that stops being a problem because reconnecting uses that exact function you passed in your connection and simply links it back to the signal.
 
-*Note: `:Once` connections retain their behavior, as in they will get disconnected again on the next `:Fire`*
+:::info
+*[:Once](../api/Signal#Once) connections retain their behavior, as in they will get disconnected again on the next [:Fire](../api/Signal#Fire)*
+:::
 
 ```lua
 local signal = LemonSignal.new()
@@ -22,8 +24,8 @@ local connection2 = signal:Once(function()
 end)
 
 signal:Fire()
--- Used Once
--- Used Connect
+--> Used Once
+--> Used Connect
 
 connection1:Disconnect()
 
@@ -33,19 +35,22 @@ connection1:Reconnect()
 connection2:Reconnect()
 
 signal:Fire()
--- Used Once
--- Used Connect
+--> Used Once
+--> Used Connect
 
 print(connection2.Connected) -- prints false, the :Once connection retains its behavior
 
 signal:Fire()
--- Used Connect
+--> Used Connect
 ```
 
 ## Variadics
 Another cool feature is the ability to connect a function while passing varargs which, for example, allows you to use the same function for all your objects for a clean and [flyweight](https://en.wikipedia.org/wiki/Flyweight_pattern) code.
 
-*Note that the `:Fire` varargs get appended to the `:Connect` varargs, meaning that `:Connect`'s varargs will always come before `:Fire`'s*
+:::info
+*[:Fire](../api/Signal#Fire) varargs get appended to a connection's varargs, meaning that [:Connect](../api/Signal#Connect) and [:Once](../api/Signal#Once) varargs will always come before `:Fire`'s*
+
+:::
 
 ```lua
 local signal = LemonSignal.new()
@@ -57,6 +62,6 @@ end
 signal:Connect(foo, "Hello")
 
 signal:Fire("world!")
--- Hello world!
+--> Hello world!
 ```
 
