@@ -313,14 +313,10 @@ function Signal.Connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...:
         Connected = true,
         _signal = self,
         _fn = fn,
-
+        _varargs = if not ... then false else {...},
         _next = head,
         _prev = false,
     }, Connection)
-
-    if ... then
-        cn._varargs = { ... }
-    end
 
     if head then
         head._prev = cn
