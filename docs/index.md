@@ -10,7 +10,7 @@ hero:
       link: /guide/what-is-lemonsignal
     - theme: alt
       text: API Reference
-      link: /api-examples
+      link: /classes/signal
   image:
     src: /lemon.png
 

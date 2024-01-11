@@ -2,8 +2,9 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-    title: "LemonSignal",
-    description: "A pure Luau signal implementation.",
+    title: 'LemonSignal',
+    base: '/LemonSignal/',
+    description: 'A pure Luau signal implementation.',
     head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
     themeConfig: {
         // https://vitepress.dev/reference/default-theme-config

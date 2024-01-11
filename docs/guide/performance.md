@@ -32,8 +32,8 @@ From the benchmarks above, we can conclude that a doubly linked list strikes the
 * Fast iteration making :Fire run as fast as an array
 * Solves singly's O(n) disconnect by making it O(1) which makes it as fast as the other 2
 
-All the signal implementations as ModuleScripts are here [signals.rbxm](/benchmarks/signals.rbxm)<br>
-All the `.bench` ModuleScripts that the benchmarker plugin uses are here [benches.rbxm](\benchmarks\benches.rbxm)
+All the signal implementations as ModuleScripts are here [signals.rbxm](https://github.com/Data-Oriented-House/LemonSignal/blob/main/docs/public/benchmarks/signals.rbxm)<br>
+All the `.bench` ModuleScripts that the benchmarker plugin uses are here [benches.rbxm](https://github.com/Data-Oriented-House/LemonSignal/blob/main/docs/public/benchmarks/benches.rbxm)
 
 ## Thread recycling
 Recycling a thread aka a coroutine helps [task.spawn](https://create.roblox.com/docs/reference/engine/libraries/task#spawn) and [coroutine.resume](https://create.roblox.com/docs/reference/engine/libraries/coroutine#resume) run significantly faster, about 70%, because those functions wont need to go through the trouble of creating a thread.
