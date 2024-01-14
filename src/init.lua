@@ -11,9 +11,9 @@ export type Connection<U...> = {
 
 export type Signal<T...> = {
 	RBXScriptConnection: RBXScriptConnection?,
-	Connect: <U...>(self: Signal<T...>, fn: (...unknown) -> (), U...) -> Connection<U...>,
+	Connect: <U...>(self: Signal<T...>, fn: (T...) -> (), U...) -> Connection<U...>,
 
-	Once: <U...>(self: Signal<T...>, fn: (...unknown) -> (), U...) -> Connection<U...>,
+	Once: <U...>(self: Signal<T...>, fn: (T...) -> (), U...) -> Connection<U...>,
 	Wait: (self: Signal<T...>) -> T...,
 	Fire: (self: Signal<T...>, T...) -> (),
 	DisconnectAll: (self: Signal<T...>) -> (),
@@ -94,7 +94,7 @@ local rbxConnect, rbxDisconnect do
 	end
 end
 
-local function connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...): Connection<U...>
+local function connect<T..., U...>(self: Signal<T...>, fn: (T...) -> (), ...: U...): Connection<U...>
 	local head = self._head
 	local cn = setmetatable({
 		Connected = true,
@@ -113,7 +113,7 @@ local function connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: 
 	return cn
 end
 
-local function once<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...)
+local function once<T..., U...>(self: Signal<T...>, fn: (T...) -> (), ...: U...)
 	local cn
 	cn = connect(self, function(...)
 		disconnect(cn)
