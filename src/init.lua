@@ -11,8 +11,8 @@ export type Connection<U...> = {
 
 export type Signal<T...> = {
 	RBXScriptConnection: RBXScriptConnection?,
+	
 	Connect: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
-
 	Once: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
 	Wait: (self: Signal<T...>) -> T...,
 	Fire: (self: Signal<T...>, T...) -> (),
