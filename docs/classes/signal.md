@@ -141,21 +141,6 @@ local connection = signal:Connect(print, "Test:")
 signal:Fire("Hello world!") --> Test: Hello world!
 ```
 
-:::danger Behavior outside of Roblox
-When ran outside of Roblox, `:Fire` will halt its execution when a connection errors.
-```lua
-local signal = LemonSignal.new()
-
-signal:Connect(function()
-error("error")
-end)
-
-signal:Fire()
-
-print("eof") -- this line wont be reached
-```
-:::
-
 ### DisconnectAll
 Disconnects all connections currently connected to the signal. They may be reconnected later.
 

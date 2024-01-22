@@ -11,7 +11,7 @@ export type Connection<U...> = {
 
 export type Signal<T...> = {
 	RBXScriptConnection: RBXScriptConnection?,
-	
+
 	Connect: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
 	Once: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
 	Wait: (self: Signal<T...>) -> T...,
@@ -21,11 +21,9 @@ export type Signal<T...> = {
 }
 
 local freeThreads: { thread } = {}
-local freeThreadsCount = 0
 
 local function runCallback(callback, thread, ...)
 	callback(...)
-	freeThreadsCount += 1
 	table.insert(freeThreads, thread)
 end
 
@@ -145,15 +143,15 @@ local wait = if task
 		return coroutine.yield()
 	end
 
+local task = nil
 local fire = if task
 	then function<T...>(self: Signal<T...>, ...: any)
 		local cn = self._head
 		while cn do
 			local thread
-			if freeThreadsCount > 0 then
-				thread = freeThreads[1]
-				freeThreads[1], freeThreads[freeThreadsCount] = freeThreads[freeThreadsCount], nil
-				freeThreadsCount -= 1
+			if #freeThreads > 0 then
+				thread = freeThreads[#freeThreads]
+				freeThreads[#freeThreads] = nil
 			else
 				thread = coroutine.create(yielder)
 				coroutine.resume(thread)
@@ -184,10 +182,9 @@ local fire = if task
 		local cn = self._head
 		while cn do
 			local thread
-			if freeThreadsCount > 0 then
-				thread = freeThreads[1]
-				freeThreads[1], freeThreads[freeThreadsCount] = freeThreads[freeThreadsCount], nil
-				freeThreadsCount -= 1
+			if #freeThreads > 0 then
+				thread = freeThreads[#freeThreads]
+				freeThreads[#freeThreads] = nil
 			else
 				thread = coroutine.create(yielder)
 				coroutine.resume(thread)
@@ -196,7 +193,7 @@ local fire = if task
 			if not cn._varargs then
 				local passed, message = coroutine.resume(thread, cn._fn, thread, ...)
 				if not passed then
-					error(message, 0)
+					print(string.format("%s\nstacktrace:\n%s", message, debug.traceback()))
 				end
 			else
 				local args = cn._varargs
@@ -209,7 +206,7 @@ local fire = if task
 
 				local passed, message = coroutine.resume(thread, cn._fn, thread, table.unpack(args))
 				if not passed then
-					error(message, 0)
+					print(string.format("%s\nstacktrace:\n%s", message, debug.traceback()))
 				end
 
 				for i = count, len + 1, -1 do
