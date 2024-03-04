@@ -143,7 +143,6 @@ local wait = if task
 		return coroutine.yield()
 	end
 
-local task = nil
 local fire = if task
 	then function<T...>(self: Signal<T...>, ...: any)
 		local cn = self._head
