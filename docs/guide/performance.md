@@ -66,7 +66,6 @@ So what can we do about this? `LemonSignal` simply caches every thread that gets
 ![recycling](/benchmarks/recycling.png)
 
 ### Memory
-Does this negatively affect memory you might wonder? To answer this, we first need to know when do we create and cache a thread? A thread gets created when a free one isnt available, and that can only happen when our connection is asynchronous because it keeps that free thread for itself until it's done with it, at which point it caches for another connection that needs it. So we only 
-First we need to understand that we only create and cache an extra thread when a connection is asynchronous, and even if every connection was asynchronous you'll eventually reach an equilibrium where no new threads will be created and will be exclusively recycled.
+Does this negatively affect memory you might wonder? To answer this, we first need to know when do we create and cache a thread? A thread gets created when a free one isnt available, and that can only happen when our connection is asynchronous because it keeps that free thread for itself until it's done with it, at which point it caches for another connection that needs it, and even if every connection was asynchronous you'll eventually reach an equilibrium where no new threads will be created and will be exclusively recycled.
 
 To give you a perspective on how little memory the caching uses, it'd take 100k cached threads to raise the heap by a measly ~100mb! And your connections will create nowhere near that amount, so you can rest assured that the memory is being used in a worthy manner.
