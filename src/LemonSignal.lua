@@ -2,18 +2,18 @@
 --!nocheck
 --!native
 
-export type Connection<U...> = {
+export type Connection = {
 	Connected: boolean,
 
-	Disconnect: (self: Connection<U...>) -> (),
-	Reconnect: (self: Connection<U...>) -> (),
+	Disconnect: (self: Connection) -> (),
+	Reconnect: (self: Connection) -> (),
 }
 
 export type Signal<T...> = {
 	RBXScriptConnection: RBXScriptConnection?,
 
-	Connect: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
-	Once: <U...>(self: Signal<T...>, fn: (...any) -> (), U...) -> Connection<U...>,
+	Connect: (self: Signal<T...>, fn: (T...) -> ()) -> Connection,
+	Once: (self: Signal<T...>, fn: (T...) -> ()) -> Connection,
 	Wait: (self: Signal<T...>) -> T...,
 	Fire: (self: Signal<T...>, T...) -> (),
 	DisconnectAll: (self: Signal<T...>) -> (),
@@ -36,7 +36,7 @@ end
 local Connection = {}
 Connection.__index = Connection
 
-local function disconnect<U...>(self: Connection<U...>)
+local function disconnect(self: Connection)
 	if not self.Connected then
 		return
 	end
@@ -58,7 +58,7 @@ local function disconnect<U...>(self: Connection<U...>)
 	end
 end
 
-local function reconnect<U...>(self: Connection<U...>)
+local function reconnect(self: Connection)
 	if self.Connected then
 		return
 	end
@@ -92,13 +92,12 @@ local rbxConnect, rbxDisconnect do
 	end
 end
 
-local function connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...): Connection<U...>
+local function connect<T...>(self: Signal<T...>, fn: (T...) -> ()): Connection
 	local head = self._head
 	local cn = setmetatable({
 		Connected = true,
 		_signal = self,
 		_fn = fn,
-		_varargs = if not ... then false else { ... },
 		_next = head,
 		_prev = false,
 	}, Connection)
@@ -111,17 +110,17 @@ local function connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: 
 	return cn
 end
 
-local function once<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...)
+local function once<T...>(self: Signal<T...>, fn: (T...) -> ())
 	local cn
 	cn = connect(self, function(...)
 		disconnect(cn)
 		fn(...)
-	end, ...)
+	end)
 	return cn
 end
 
 local wait = if task
-	then function<T...>(self: Signal<T...>): ...any
+	then function<T...>(self: Signal<T...>): T...
 		local thread = coroutine.running()
 		local cn
 		cn = connect(self, function(...)
@@ -130,7 +129,7 @@ local wait = if task
 		end)
 		return coroutine.yield()
 	end
-	else function<T...>(self: Signal<T...>): ...any
+	else function<T...>(self: Signal<T...>): T...
 		local thread = coroutine.running()
 		local cn
 		cn = connect(self, function(...)
@@ -144,7 +143,7 @@ local wait = if task
 	end
 
 local fire = if task
-	then function<T...>(self: Signal<T...>, ...: any)
+	then function<T...>(self: Signal<T...>, ...: T...)
 		local cn = self._head
 		while cn do
 			local thread
@@ -156,28 +155,12 @@ local fire = if task
 				coroutine.resume(thread)
 			end
 
-			if not cn._varargs then
-				task.spawn(thread, cn._fn, thread, ...)
-			else
-				local args = cn._varargs
-				local len = #args
-				local count = len
-				for _, value in { ... } do
-					count += 1
-					args[count] = value
-				end
-
-				task.spawn(thread, cn._fn, thread, table.unpack(args))
-
-				for i = count, len + 1, -1 do
-					args[i] = nil
-				end
-			end
+			task.spawn(thread, cn._fn, thread, ...)
 
 			cn = cn._next
 		end
 	end
-	else function<T...>(self: Signal<T...>, ...: any)
+	else function<T...>(self: Signal<T...>, ...: T...)
 		local cn = self._head
 		while cn do
 			local thread
@@ -189,28 +172,9 @@ local fire = if task
 				coroutine.resume(thread)
 			end
 
-			if not cn._varargs then
-				local passed, message = coroutine.resume(thread, cn._fn, thread, ...)
-				if not passed then
-					print(string.format("%s\nstacktrace:\n%s", message, debug.traceback()))
-				end
-			else
-				local args = cn._varargs
-				local len = #args
-				local count = len
-				for _, value in { ... } do
-					count += 1
-					args[count] = value
-				end
-
-				local passed, message = coroutine.resume(thread, cn._fn, thread, table.unpack(args))
-				if not passed then
-					print(string.format("%s\nstacktrace:\n%s", message, debug.traceback()))
-				end
-
-				for i = count, len + 1, -1 do
-					args[i] = nil
-				end
+			local passed, message = coroutine.resume(thread, cn._fn, thread, ...)
+			if not passed then
+				print(string.format("%s\nstacktrace:\n%s", message, debug.traceback()))
 			end
 
 			cn = cn._next

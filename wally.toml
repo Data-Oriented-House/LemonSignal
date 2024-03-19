@@ -1,10 +1,10 @@
 [package]
 name = "data-oriented-house/lemonsignal"
-version = "1.10.0"
+version = "2.0.0"
 registry = "https://github.com/UpliftGames/wally-index"
 licence = "MIT"
 authors = ["Aspecky", "Sona"]
-description = "A pure Luau signal implementation faster than most other implementations in Roblox."
+description = "A typesafe pure-Luau signal implementation faster than most other implementations in Roblox."
 realm = "shared"
 exclude = ["**"]
 include = [
