@@ -126,7 +126,9 @@ local wait = if task
 		local cn
 		cn = connect(self, function(...)
 			disconnect(cn)
-			task.spawn(thread, ...)
+			if coroutine.status(thread) == "suspended" then
+				task.spawn(thread, ...)
+			end
 		end)
 		return coroutine.yield()
 	end
