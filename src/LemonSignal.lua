@@ -94,12 +94,12 @@ end
 
 local function connect<T..., U...>(self: Signal<T...>, fn: (...any) -> (), ...: U...): Connection<U...>
 	local head = self._head
-	local packed_args = { ... }
+	local varargs = { ... }
 	local cn = setmetatable({
 		Connected = true,
 		_signal = self,
 		_fn = fn,
-		_varargs = if #packed_args == 0 then false else packed_args,
+		_varargs = if #varargs == 0 then false else varargs,
 		_next = head,
 		_prev = false,
 	}, Connection)
