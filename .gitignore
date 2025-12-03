@@ -1,5 +1,6 @@
 docs/.vitepress/dist
 docs/.vitepress/cache
+.vscode
 node_modules
 sourcemap.json
 build
