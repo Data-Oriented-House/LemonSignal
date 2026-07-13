@@ -1,7 +1,7 @@
 [package]
 name = "data-oriented-house/lemonsignal"
 description = "A pure Luau signal implementation faster than most other implementations in Roblox."
-version = "1.11.0"
+version = "2.0"
 licence = "MIT"
 authors = ["Aspecky", "Sona"]
 realm = "shared"

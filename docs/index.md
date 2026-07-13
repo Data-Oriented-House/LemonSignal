@@ -19,7 +19,5 @@ features:
     details: Up to 40% speed increase when firing the signal with asynchronous connections.
   - title: 🔌 Reconnect
     details: Reconnect makes it a lot more convenient and efficient to reconnect your connections.
-  - title: 💬 Variadic connections 
-    details: In addition to passing a function when connecting, you can pass variadics to it too.
 ---
 

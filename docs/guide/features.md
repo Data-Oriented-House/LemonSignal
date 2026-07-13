@@ -37,27 +37,6 @@ signal:Fire()
 --> Used Connect
 ```
 
-## Variadic connections
-Another cool feature is the ability to connect a function while passing varargs which so you can use the same function for all your objects for a clean and [flyweight](https://en.wikipedia.org/wiki/Flyweight_pattern) code.
-
-:::info
-*[:Fire](../classes/signal#fire) varargs get appended to a connection's varargs, meaning that [:Connect](../classes/signal#connect) and [:Once](../classes/signal#once) varargs will always come before `:Fire`'s*
-
-:::
-
-```lua
-local signal = LemonSignal.new()
-
-local function foo(str1: string, str2: string)
-    print(str1 .. " " .. str2)
-end
-
-signal:Connect(foo, "Hello")
-
-signal:Fire("world!")
---> Hello world!
-```
-
 ## Signal wrapping
 This lets you "turn" an [RBXScriptSignal](https://create.roblox.com/docs/reference/engine/datatypes/RBXScriptSignal) into a `LemonSignal` by firing the latter signal every time the former fires, so you can use all the new API as if the `RBXScriptSignal` had it.
 

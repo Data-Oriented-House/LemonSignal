@@ -4,11 +4,11 @@ outline: deep
 
 # Connection
 ```lua
-type Connection<U...> = {
-Connected: boolean,
+type Connection = {
+	Connected: boolean,
 
-Disconnect: (self: Connection<U...>) -> (),
-Reconnect: (self: Connection<U...>) -> (),
+	Disconnect: (self: Connection) -> (),
+	Reconnect: (self: Connection) -> (),
 }
 ```
 

@@ -5,14 +5,14 @@ outline: deep
 # Signal
 ```lua
 type Signal<T...> = {
-    RBXScriptConnection: RBXScriptConnection?,
+	RBXScriptConnection: RBXScriptConnection?,
 
-    Connect: <U...>(self: Signal<T...>, fn: (...unknown) -> (), U...) -> Connection<U...>,
-    Once: <U...>(self: Signal<T...>, fn: (...unknown) -> (), U...) -> Connection<U...>,
-    Wait: (self: Signal<T...>) -> T...,
-    Fire: (self: Signal<T...>, T...) -> (),
-    DisconnectAll: (self: Signal<T...>) -> (),
-    Destroy: (self: Signal<T...>) -> (),
+	Connect: (self: Signal<T...>, fn: (T...) -> ()) -> Connection,
+	Once: (self: Signal<T...>, fn: (T...) -> ()) -> Connection,
+	Wait: (self: Signal<T...>) -> T...,
+	Fire: (self: Signal<T...>, T...) -> (),
+	DisconnectAll: (self: Signal<T...>) -> (),
+	Destroy: (self: Signal<T...>) -> (),
 }
 ```
 
